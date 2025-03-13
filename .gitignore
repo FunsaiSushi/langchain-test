@@ -3,3 +3,6 @@
 
 # Ignore all env files
 **/.env*
+
+# Ignore .pnpm-store folders
+**/.pnpm-store/
