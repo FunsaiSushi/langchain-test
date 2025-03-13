@@ -16,7 +16,7 @@ const Home = () => {
       <h1 className="text-3xl font-bold text-center mb-8">Blog Posts</h1>
       <div className="max-w-2xl mx-auto">
         <PostInput onPostSubmit={handlePostSubmit} />
-        <QuestionInput />
+        {/* <QuestionInput /> */}
         <Posts key={refresh} />
       </div>
     </div>

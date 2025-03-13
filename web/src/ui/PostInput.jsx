@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 // In this file the post input will be created
@@ -7,10 +7,18 @@ import axios from "axios";
 // The user will also be able to submit the post which will make a request to the backend with axios to create the post
 
 const PostInput = ({ onPostSubmit }) => {
-  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [userId, setUserId] = useState(null);
+
+  // Load userId from localStorage on component mount
+  useEffect(() => {
+    const storedUserId = localStorage.getItem("userId");
+    if (storedUserId) {
+      setUserId(storedUserId);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,8 +26,20 @@ const PostInput = ({ onPostSubmit }) => {
     setError(null);
 
     try {
-      await axios.post("/api/posts", { title, content });
-      setTitle("");
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/post/create`,
+        {
+          content,
+          userId, // Include userId if it exists
+        }
+      );
+
+      // If a new userId was generated, store it
+      if (response.data.userIdGenerated) {
+        localStorage.setItem("userId", response.data.userId);
+        setUserId(response.data.userId);
+      }
+
       setContent("");
       if (onPostSubmit) onPostSubmit();
     } catch (err) {
@@ -39,32 +59,17 @@ const PostInput = ({ onPostSubmit }) => {
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label
-            htmlFor="title"
-            className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
-          >
-            Title
-          </label>
-          <input
-            type="text"
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
-            required
-          />
-        </div>
-        <div className="mb-4">
-          <label
             htmlFor="content"
             className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
           >
-            Content
+            {/* Content */}
           </label>
           <textarea
             id="content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md h-32 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
+            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md h-32 bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 resize-none focus:outline-none focus:ring focus:ring-blue-400 dark:focus:ring-blue-600"
+            placeholder="What's on your mind?"
             required
           />
         </div>

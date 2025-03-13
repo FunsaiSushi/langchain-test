@@ -1,28 +1,65 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useParams, usePathname } from "next/navigation";
 
 // In this file the question input will be created
 // The user will be able to input the question
 // The user will also be able to submit the question which will make a request to the backend with axios to generate the answer
 // The answer will be displayed in this component as well
 
-const QuestionInput = ({ postId, onQuestionSubmit }) => {
+const QuestionInput = ({ onQuestionSubmit }) => {
+  const params = useParams();
+  const pathname = usePathname();
+  const [postId, setPostId] = useState(null);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  useEffect(() => {
+    // Try to get postId from params first
+    if (params && params.postId) {
+      setPostId(params.postId);
+    }
+    // If not available in params, extract from URL path
+    else {
+      const pathSegments = pathname?.split("/") || [];
+      const urlPostId = pathSegments[pathSegments.length - 1];
+
+      if (urlPostId) {
+        setPostId(urlPostId);
+      } else {
+        // Last resort: try getting from window location if running on client
+        if (typeof window !== "undefined") {
+          const urlPath = window.location.pathname;
+          const urlSegments = urlPath.split("/");
+          const lastSegment = urlSegments[urlSegments.length - 1];
+          if (lastSegment) {
+            setPostId(lastSegment);
+          }
+        }
+      }
+    }
+  }, [params, pathname]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!question.trim()) return;
+
+    // Check if postId exists
+    if (!postId) {
+      setError("No post ID found. Cannot submit question.");
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
     try {
-      const response = await axios.post("/api/questions", {
-        postId,
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const response = await axios.post(`${apiUrl}/qa/create`, {
+        postId: postId,
         question,
       });
 

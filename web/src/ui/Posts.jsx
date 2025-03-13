@@ -22,14 +22,36 @@ const Posts = () => {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/posts?page=${page}`);
+
+      // You need to provide a userId in the query parameters
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/post/all`,
+        {
+          params: {
+            userId: localStorage.getItem("userId"),
+            page: page,
+            limit: 10,
+          },
+        }
+      );
+
       const newPosts = response.data.posts;
 
       if (newPosts.length === 0) {
         setHasMore(false);
       } else {
-        setPosts((prev) => [...prev, ...newPosts]);
-        setPage((prev) => prev + 1);
+        // Filter out duplicates by checking post IDs
+        const existingPostIds = new Set(posts.map((post) => post._id));
+        const uniqueNewPosts = newPosts.filter(
+          (post) => !existingPostIds.has(post._id)
+        );
+
+        if (uniqueNewPosts.length === 0) {
+          setHasMore(false);
+        } else {
+          setPosts((prev) => [...prev, ...uniqueNewPosts]);
+          setPage((prev) => prev + 1);
+        }
       }
     } catch (err) {
       setError("Failed to load posts.");
@@ -58,7 +80,7 @@ const Posts = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {posts.map((post) => (
-            <Link href={`/post/${post.slug}`} key={post.id}>
+            <Link href={`/post/${post._id}`} key={post._id}>
               <div className="bg-white dark:bg-zinc-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
                 <h3 className="text-xl font-semibold mb-2 text-zinc-800 dark:text-zinc-100">
                   {post.title}

@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import postRoutes from "./routes/post.routes.js";
 import qaRoutes from "./routes/qa.routes.js";
 import connectDB from "./config/db.js";
@@ -12,20 +13,17 @@ const app = express();
 // Middleware
 app.use(express.json());
 
-// Routes
-app.use("/api/blog", postRoutes);
-app.use("/api/qa", qaRoutes);
-
 // CORS middleware
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-  next();
-});
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:4000",
+    credentials: true,
+  })
+);
+
+// Routes
+app.use("/api/post", postRoutes);
+app.use("/api/qa", qaRoutes);
 
 // Connect to MongoDB
 connectDB();

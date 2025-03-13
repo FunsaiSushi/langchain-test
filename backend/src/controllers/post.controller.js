@@ -9,40 +9,36 @@ import mongoose from "mongoose";
 // return the new post post (along with the userId if there was none)
 export const createPost = async (req, res) => {
   try {
-    const { title, content, userId } = req.body;
+    const { content, userId } = req.body;
+    const title = req.body.title || "Untitled Post";
 
-    if (!title || !content) {
-      return res
-        .status(400)
-        .json({ message: "Title and content are required" });
+    if (!content) {
+      return res.status(400).json({ message: "Content is required" });
     }
 
     let userDocument;
 
-    // If no userId provided, create a new one
     if (!userId) {
-      const randomUserId = mongoose.Types.ObjectId().toString();
+      const randomUserId = new mongoose.Types.ObjectId().toString();
       userDocument = new User({ userId: randomUserId });
       await userDocument.save();
     } else {
-      // Check if user exists, otherwise create it
       userDocument = await User.findOne({ userId });
+
       if (!userDocument) {
         userDocument = new User({ userId });
         await userDocument.save();
       }
     }
 
-    // Create the post
     const post = new Post({
       title,
       content,
-      userId: userDocument._id,
+      userId: userDocument._id, // Make sure this is an ObjectId
     });
 
     const savedPost = await post.save();
 
-    // Return the new post along with userId if it was generated
     return res.status(201).json({
       post: savedPost,
       userId: userDocument.userId,
@@ -92,6 +88,45 @@ export const getPosts = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching posts:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// getPostById
+// Get a specific post by its ID
+// Return the post if found, or 404 if not found
+export const getPostById = async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    if (!postId) {
+      return res.status(400).json({ message: "Post ID is required" });
+    }
+
+    // Check if postId is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ message: "Invalid post ID format" });
+    }
+
+    // Find the post by its ID
+    const post = await Post.findById(postId);
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Get user information
+    const user = await User.findById(post.userId);
+
+    return res.status(200).json({
+      id: post._id,
+      title: post.title,
+      content: post.content,
+      createdAt: post.createdAt,
+      userId: user ? user.userId : null,
+    });
+  } catch (error) {
+    console.error("Error fetching post:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };
