@@ -1,7 +1,11 @@
 import express from "express";
-import mongoose from "mongoose";
-import blogRoutes from "./routes/blogRoutes.js";
-import qaRoutes from "./routes/qaRoutes.js";
+import postRoutes from "./routes/post.routes.js";
+import qaRoutes from "./routes/qa.routes.js";
+import connectDB from "./config/db.js";
+import dotenv from "dotenv";
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 
@@ -9,26 +13,25 @@ const app = express();
 app.use(express.json());
 
 // Routes
-app.use("/api/blog", blogRoutes);
+app.use("/api/blog", postRoutes);
 app.use("/api/qa", qaRoutes);
 
-// MongoDB Connection
-mongoose
-  .connect("mongodb://localhost:27017/mern-langchain", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => {
-    console.log("Connected to MongoDB");
-  })
-  .catch((err) => {
-    console.log("MongoDB connection error:", err);
-  });
-
-app.listen(5000, () => {
-  console.log("Server is running on http://localhost:5000");
+// CORS middleware
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+  next();
 });
 
-// flow of the app
-// when a user uploads a blog post - the post is saved in the database
-// user asks questions in the context of that blog post - the que
+// Connect to MongoDB
+connectDB();
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+});

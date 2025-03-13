@@ -1,5 +1,5 @@
 import express from "express";
-import { createQA, getQAs } from "../controllers/qa.controllers.js";
+import { createQA, getQAs } from "../controllers/qa.controller.js";
 
 const router = express.Router();
 
