@@ -1,79 +1,51 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React from "react";
 import axios from "axios";
 import Link from "next/link";
+import { useInfiniteQuery } from "@tanstack/react-query";
 
-// In this file the posts will be displayed with a load more button
-// The posts will be fetched from the backend with axios
-// The posts will be displayed in a grid with the title and content (first 100 characters)
-// The user will be able to click on a post to view the full post along with questions and answers for that post
+const fetchPosts = async ({ pageParam = 1 }) => {
+  const { data } = await axios.get(
+    `${process.env.NEXT_PUBLIC_API_URL}/post/all`,
+    {
+      params: {
+        userId: localStorage.getItem("userId"),
+        page: pageParam,
+        limit: 10,
+      },
+    }
+  );
+  return data.posts;
+};
 
 const Posts = () => {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    error,
+    status,
+  } = useInfiniteQuery({
+    queryKey: ["posts"],
+    queryFn: fetchPosts,
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.length > 0 ? allPages.length + 1 : undefined;
+    },
+  });
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
+  if (status === "loading") return <div>Loading posts...</div>;
+  if (error) return <div className="text-red-500">Failed to load posts</div>;
 
-  const fetchPosts = async () => {
-    try {
-      setLoading(true);
-
-      // You need to provide a userId in the query parameters
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/post/all`,
-        {
-          params: {
-            userId: localStorage.getItem("userId"),
-            page: page,
-            limit: 10,
-          },
-        }
-      );
-
-      const newPosts = response.data.posts;
-
-      if (newPosts.length === 0) {
-        setHasMore(false);
-      } else {
-        // Filter out duplicates by checking post IDs
-        const existingPostIds = new Set(posts.map((post) => post._id));
-        const uniqueNewPosts = newPosts.filter(
-          (post) => !existingPostIds.has(post._id)
-        );
-
-        if (uniqueNewPosts.length === 0) {
-          setHasMore(false);
-        } else {
-          setPosts((prev) => [...prev, ...uniqueNewPosts]);
-          setPage((prev) => prev + 1);
-        }
-      }
-    } catch (err) {
-      setError("Failed to load posts.");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const truncateContent = (content, maxLength = 100) => {
-    if (content.length <= maxLength) return content;
-    return `${content.substring(0, maxLength)}...`;
-  };
-
-  if (error) return <div className="text-red-500">{error}</div>;
+  // Check if data.pages exists and is not empty
+  const posts = data?.pages?.flat() || [];
 
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6 text-zinc-800 dark:text-zinc-100">
         Recent Posts
       </h2>
-      {posts.length === 0 && !loading ? (
+      {posts.length === 0 ? (
         <p className="text-zinc-500 dark:text-zinc-400">
           No posts available. Create your first post!
         </p>
@@ -86,7 +58,7 @@ const Posts = () => {
                   {post.title}
                 </h3>
                 <p className="text-zinc-700 dark:text-zinc-300">
-                  {truncateContent(post.content)}
+                  {post.content.slice(0, 100)}...
                 </p>
               </div>
             </Link>
@@ -94,14 +66,14 @@ const Posts = () => {
         </div>
       )}
 
-      {hasMore && (
+      {hasNextPage && (
         <div className="mt-8 text-center">
           <button
-            onClick={fetchPosts}
-            disabled={loading}
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
             className="bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 py-2 px-4 rounded-md disabled:opacity-50"
           >
-            {loading ? "Loading..." : "Load More"}
+            {isFetchingNextPage ? "Loading..." : "Load More"}
           </button>
         </div>
       )}

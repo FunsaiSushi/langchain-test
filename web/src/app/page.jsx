@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import PostInput from "@/ui/PostInput";
 import Posts from "@/ui/Posts";
-import QuestionInput from "@/ui/QuestionInput";
 
 const Home = () => {
   const [refresh, setRefresh] = useState(false);
