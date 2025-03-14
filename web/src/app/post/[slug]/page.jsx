@@ -106,8 +106,8 @@ const FullPost = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Link href="/" className="text-blue-600 hover:underline mb-6 block">
-        ← Back to all posts
+      <Link href="/" className="text-cyan-400 hover:underline mb-6 block">
+        Back to all posts
       </Link>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
