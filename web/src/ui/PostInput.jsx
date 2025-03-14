@@ -53,7 +53,7 @@ const PostInput = ({ onPostSubmit }) => {
   return (
     <div className="bg-white dark:bg-zinc-800 p-6 rounded-lg shadow-md mb-8">
       <h2 className="text-xl font-bold mb-4 text-zinc-800 dark:text-zinc-100">
-        Create a New Post
+        Enter text
       </h2>
       {error && <div className="text-red-500 mb-4">{error}</div>}
       <form onSubmit={handleSubmit}>
